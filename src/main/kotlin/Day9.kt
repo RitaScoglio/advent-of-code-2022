@@ -1,18 +1,13 @@
 import java.io.File
 import java.lang.Math.abs
+import kotlin.math.sign
 
 class Day9 {
     fun readFileAsList(fileName: String): List<String> = File(fileName).useLines { it.toList() }
 
     data class Coors(val x: Int, val y: Int) {
         fun moveTowards(other: Coors): Coors {
-            var newX = other.x - x
-            var newY = other.y - y
-            if (newX != 0)
-                newX = newX / abs(newX)
-            if (newY != 0)
-                newY = newY / abs(newY)
-            return Coors(x + newX, y + newY)
+            return Coors(x + (other.x - x).sign, y + (other.y - y).sign)
         }
     }
 
@@ -24,32 +19,16 @@ class Day9 {
     }
 
     fun simulateMotions(input: List<List<String>>, rope: MutableList<Coors>): Int {
+        val directions = mapOf("R" to Coors(0, 1), "L" to Coors(0, -1), "U" to Coors(1, 0), "D" to Coors(-1, 0))
         val tailPositions = mutableSetOf<Coors>()
-        input.forEach { motion ->
-            when (motion[0]) {
-                "R" -> (1..motion[1].toInt())
-                    .forEach { step ->
-                        tailPositions.add(moveRope(rope, 0, 1))
-                    }
-                "L" -> (1..motion[1].toInt())
-                    .forEach { step ->
-                        tailPositions.add(moveRope(rope, 0, -1))
-                    }
-                "U" -> (1..motion[1].toInt())
-                    .forEach { step ->
-                        tailPositions.add(moveRope(rope, 1, 0))
-                    }
-                "D" -> (1..motion[1].toInt())
-                    .forEach { step ->
-                        tailPositions.add(moveRope(rope, -1, 0))
-                    }
-            }
+        input.forEach { motion -> (1..motion[1].toInt())
+                .forEach { directions.get(motion[0])?.let { moveRope(rope, it) }?.let { tailPositions.add(it) } }
         }
         return tailPositions.size
     }
 
-    fun moveRope(rope: MutableList<Coors>, addX: Int, addY: Int): Coors {
-        rope[0] = Coors(rope[0].x + addX, rope[0].y + addY)
+    fun moveRope(rope: MutableList<Coors>, add: Coors): Coors {
+        rope[0] = Coors(rope[0].x + add.x, rope[0].y + add.y)
         (1..rope.size - 1).forEach { knot ->
             if (abs(rope[knot].x - rope[knot - 1].x) > 1 || abs(rope[knot].y - rope[knot - 1].y) > 1) {
                 rope[knot] = rope[knot].moveTowards(rope[knot - 1])
